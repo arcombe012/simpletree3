@@ -1,0 +1,17 @@
+language: python
+python:
+
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "3.8"
+  - "pypy3"
+# command to install dependencies
+install:
+  - pip3 install -r requirements.txt
+  - pip3 install -U pytest
+  - pip3 install -U coverage
+# command to run tests
+script:
+  - pytest .
