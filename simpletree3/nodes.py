@@ -12,12 +12,13 @@ class SimpleNode:
     with their keys as dictionary keys, so they must be unique
     (repetition of keys is allowed for different nodes' children)
     """
-    def __init__(self, key, parent=None):
+    def __init__(self, key, parent=None, **kwargs):
         self.__parent = None
         self.__children = dict()
         self.__key = key
         if parent:      # pragma: no branch
             self.parent = parent
+        self.__dict__.update(kwargs)
 
     @property
     def key(self):
@@ -198,8 +199,8 @@ class FlexibleNode(SimpleNode):
     they will be set when calling super().__init__(...)
     so don't reset them after that call unless necessary
     """
-    def __init__(self, key, parent=None):
-        super().__init__(key, parent)
+    def __init__(self, key, parent=None, **kwargs):
+        super().__init__(key, parent=parent, **kwargs)
 
     @property
     def parent(self):
@@ -236,8 +237,8 @@ class FlexibleNode(SimpleNode):
 
 
 class SimpleTreeException(RuntimeError):
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, *args):
+        super().__init__(*args)
 
 
 class DuplicateChildNode(SimpleTreeException):
