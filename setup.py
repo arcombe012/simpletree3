@@ -5,17 +5,15 @@ from setuptools.config import read_configuration
 cfg_dict = read_configuration("setup.cfg")
 
 try:
-    if not os.environ.get('use_cython', False):
-        raise RuntimeError("not using cython")
     print("checking for cython")
     # if cython is installed, use it to compile
     from Cython.Build import cythonize
 
-    ext_mods = [setuptools.Extension("simpletree3/algorithms",
+    ext_mods = [setuptools.Extension("simpletree3.algorithms",
             [
                 "simpletree3/algorithms.py"
             ]),
-            setuptools.Extension("simpletree3/nodes",
+            setuptools.Extension("simpletree3.nodes",
             [
                 "simpletree3/nodes.py"
             ])
