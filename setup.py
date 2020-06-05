@@ -21,7 +21,6 @@ try:
             ])
             ]
     setuptools.setup(
-        test_suite="nose.collector",
         ext_modules=cythonize(ext_mods),
         **cfg_dict["metadata"]
     )
@@ -31,6 +30,5 @@ except Exception as e_:
     # fall back to pure python
     print("building pure python")
     setuptools.setup(
-        test_suite="nose.collector",
         **cfg_dict["metadata"]
     )
