@@ -44,6 +44,9 @@ class SimpleNode:
     def parent(self, other):
         """set the parent node.
         If not null, ensure that self is a child of the new parent"""
+        if self.__parent == other:
+            # already has this parent
+            return
         self.__parent = other
         if other:       # pragma: no branch
             if self in reverse_path_iterator(other):        # pragma: no branch
@@ -65,17 +68,18 @@ class SimpleNode:
         """add a child. Set self as the child's parent, if needed."""
         if self == child:       # pragma: no branch
             raise InvalidNodeOperation("adding itself as child")
-        key = child.key
-        old_child = self.__children.get(key, None)
         if child.parent != self:        # pragma: no branch
             child.parent = self
+        key = child.key
+        old_child = self.__children.get(key, None)
         if old_child is None:       # pragma: no branch
             # new child
             self.__children[key] = child
             return
-        if self.__children[key] == child:       # pragma: no branch
+        if old_child == child:       # pragma: no branch
             # already have it as child
             return
+        # already have a different child node with this key
         raise DuplicateChildNode(key=key)
 
     def remove_child(self, key, recursive: bool = False):
@@ -106,10 +110,10 @@ class SimpleNode:
         :param recursive: whether to recursively remove all descendants
         :return: a list of the former children, or None if recursive (or if no children)
         """
-        if len(self.__children) == 0:        # pragma: no branch
+        if not self.__children:        # pragma: no branch
             return None
         if recursive:
-            while len(self.__children):
+            while self.__children:
                 k_, v_ = self.__children.popitem()
                 v_.parent = None
                 v_.remove_children(recursive=True)
@@ -139,10 +143,8 @@ class SimpleNode:
     def siblings(self):
         """iterate through the node's siblings if any."""
         if self.__parent:       # pragma: no branch
-            for sibling in self.__parent.children:
-                if sibling == self:     # pragma: no branch
-                    continue
-                yield sibling
+            yield from (v for v in self.__parent.children
+                if v.key != self.key)
 
     @property
     def siblings_count(self):
@@ -166,18 +168,19 @@ class SimpleNode:
     @property
     def is_leaf(self) -> bool:
         """check whether self is a leaf node"""
-        return len(self.__children) == 0
+        return not self.__children
 
     @property
     @lru_cache()
     def height(self) -> int:
         """return the height of the subtree rooted on self
         (a.k.a. the longest branch)"""
-        if len(self.__children):        # pragma: no branch
+        if self.__children:        # pragma: no branch
             return 1 + max(child.height for child in self.__children.values())
         return 0
 
     @property
+    @lru_cache()
     def depth(self):
         """return the depth of self in the tree
         (the distance/number of edges to the root node)"""

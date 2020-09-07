@@ -4,8 +4,7 @@ Simpletree3 module
 Offers classes implementing basic tree-like
 functionality, as well as iterators for walking
 the trees and node search functionality. Requires Python3.4 or later.
-Optional cython compilation is performed if the environment variable
-'use_cython' is set to True.
+Cython compilation is performed if cython is installed.
 
 The design goal is to provide a basic class implementing the
 essential tree structure and functionality. Practical applications will
@@ -76,7 +75,7 @@ The module implements preorder, postorder, level
 and leaf iterators. Each comes in two flavors - a simple
 one, iterating through all nodes, and a filtered
 one, where specific nodes can be selected
-or specific subtrees can be ignored.
+and/or specific subtrees can be ignored.
 
 Search functionality
 --------------------
@@ -92,5 +91,3 @@ inserted node. To optimize for this case, a separate
 search procedure is implemented, which walks up the
 tree from the start node and searches for the
 specified key in the subtree rooted in each ancestor.
-
-

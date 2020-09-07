@@ -1,14 +1,12 @@
 
 # nodes
-from .nodes import SimpleNode
-from .nodes import FlexibleNode
+from .nodes import SimpleNode, FlexibleNode
 
 # exceptions
-from .nodes import SimpleTreeException
-from .nodes import DuplicateChildNode
-from .nodes import InvalidNodeOperation
+from .nodes import SimpleTreeException, DuplicateChildNode, InvalidNodeOperation
 
 # iterators
+from .algorithms import reverse_path_iterator
 from .algorithms import preorder_iterator, filtered_preorder_iterator
 from .algorithms import postorder_iterator, filtered_postorder_iterator
 from .algorithms import level_order_iterator, filtered_level_order_iterator
