@@ -47,13 +47,18 @@ class SimpleNode:
         if self.__parent == other:
             # already has this parent
             return
-        self.__parent = other
+        if self.__parent:
+            self.__parent.__children.pop(self.__key, None)
         if other:       # pragma: no branch
             if self in reverse_path_iterator(other):        # pragma: no branch
                 if self is other:       # pragma: no branch
                     raise InvalidNodeOperation("attempting to insert node as child of itself")
                 raise InvalidNodeOperation("attempting to insert ancestor node as child")
-            other.add_child(self)
+            c_ = other.__children.get(self.__key)
+            if c_:
+                raise DuplicateChildNode(key=self.__key)
+            other.__children[self.__key] = self
+        self.__parent = other
 
     @parent.deleter
     def parent(self):
@@ -68,19 +73,16 @@ class SimpleNode:
         """add a child. Set self as the child's parent, if needed."""
         if self == child:       # pragma: no branch
             raise InvalidNodeOperation("adding itself as child")
-        if child.parent != self:        # pragma: no branch
-            child.parent = self
         key = child.key
         old_child = self.__children.get(key, None)
-        if old_child is None:       # pragma: no branch
-            # new child
-            self.__children[key] = child
-            return
         if old_child == child:       # pragma: no branch
             # already have it as child
             return
-        # already have a different child node with this key
-        raise DuplicateChildNode(key=key)
+        if old_child and child != old_child:
+            # already have a different child node with this key
+            raise DuplicateChildNode(key=key)
+        child.parent = self
+
 
     def remove_child(self, key, recursive: bool = False):
         """
@@ -171,7 +173,7 @@ class SimpleNode:
         return not self.__children
 
     @property
-    @lru_cache()
+    # @lru_cache()
     def height(self) -> int:
         """return the height of the subtree rooted on self
         (a.k.a. the longest branch)"""
@@ -180,7 +182,7 @@ class SimpleNode:
         return 0
 
     @property
-    @lru_cache()
+    # @lru_cache()
     def depth(self):
         """return the depth of self in the tree
         (the distance/number of edges to the root node)"""
