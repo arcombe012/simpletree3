@@ -32,7 +32,7 @@ def level_order_iterator(node):
     while len(nodes_):
         for node_ in nodes_:
             yield node_
-        nodes_ = list(chain(*[node_.children for node_ in nodes_]))
+        nodes_ = list(chain.from_iterable((node_.children for node_ in nodes_)))
 
 
 def leaves_iterator(node):

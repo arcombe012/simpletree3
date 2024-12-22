@@ -1,7 +1,7 @@
 # cython: language_level = 3
 from functools import lru_cache
 
-from .algorithms import reverse_path_iterator
+from .algorithms import leaves_iterator, reverse_path_iterator
 
 
 class SimpleNode:
@@ -47,12 +47,12 @@ class SimpleNode:
         if self.__parent == other:
             # already has this parent
             return
+        if self is other:       # pragma: no branch
+            raise InvalidNodeOperation("attempting to insert node as child of itself")
         if self.__parent:
             self.__parent.__children.pop(self.__key, None)
         if other:       # pragma: no branch
             if self in reverse_path_iterator(other):        # pragma: no branch
-                if self is other:       # pragma: no branch
-                    raise InvalidNodeOperation("attempting to insert node as child of itself")
                 raise InvalidNodeOperation("attempting to insert ancestor node as child")
             c_ = other.__children.get(self.__key)
             if c_:
@@ -99,7 +99,7 @@ class SimpleNode:
         if key is None or key not in self.__children.keys():        # pragma: no branch
             return None
         child_ = self.__children.pop(key)
-        child_.parent = None
+        child_.__parent = None
         if recursive:
             child_.remove_children(recursive=True)
             del child_
@@ -173,22 +173,26 @@ class SimpleNode:
         return not self.__children
 
     @property
-    # @lru_cache()
     def height(self) -> int:
         """return the height of the subtree rooted on self
         (a.k.a. the longest branch)"""
-        if self.__children:        # pragma: no branch
-            return 1 + max(child.height for child in self.__children.values())
-        return 0
+        @lru_cache
+        def _depth(node):
+            """recursive, cache-able version"""
+            if node.parent is None:
+                return 0
+            return 1 + _depth(node.parent)
+
+        # clear _depth cache
+        _depth.cache_clear()
+        d0_ = _depth(self)
+        return max(_depth(n_) for n_ in leaves_iterator(self)) - d0_
 
     @property
-    # @lru_cache()
     def depth(self):
         """return the depth of self in the tree
         (the distance/number of edges to the root node)"""
-        if self.__parent:       # pragma: no branch
-            return self.__parent.depth + 1
-        return 0
+        return sum((1 for _ in reverse_path_iterator(self)), -1)
 
 
 class FlexibleNode(SimpleNode):

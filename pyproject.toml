@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simpletree3"
+authors = [{"name" = "arcombe012"}]
+description = "A simple tree structure and associated search/iteration tools for python 3.4+. If found, uses cython for compilation."
+requires-python = ">=3.4"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+keywords = [
+    "tree",
+    "tree structure",
+    "python3 tree class"
+    ]
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+    ]
+dynamic = ["version"]
+
+[project.urls]
+source = "https://github.com/arcombe012/simpletree3.git"
+
+[tool.setuptools]
+packages = ["simpletree3"]
+
+[tool.setuptools.dynamic]
+version = {attr = "simpletree3.__version__"}
