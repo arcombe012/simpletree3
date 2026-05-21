@@ -1,10 +1,12 @@
 # cython: language_level = 3
+from typing import Generator, Hashable
 from functools import lru_cache
 
+from .abstract_node import AbstractNode
 from .algorithms import leaves_iterator, reverse_path_iterator
 
 
-class SimpleNode:
+class SimpleNode(AbstractNode):
     """
     A simple node base class used for tree building.
     It requires at minimum a key and a parent.
@@ -12,13 +14,13 @@ class SimpleNode:
     with their keys as dictionary keys, so they must be unique
     (repetition of keys is allowed for different nodes' children)
     """
-    def __init__(self, key, parent=None, **kwargs):
+    def __init__(self, key: Hashable, parent: "SimpleNode | None" = None, **kwargs):
         self.__parent = None
-        self.__children = dict()
-        self.__key = key
+        self.__children: "dict[Hashable, SimpleNode]" = dict()
+        self.__key: Hashable = key
         if parent:      # pragma: no branch
             self.parent = parent
-        self.__dict__.update(kwargs)
+        self.__dict__.update(kwargs)  # type: ignore
 
     @property
     def key(self):
@@ -26,7 +28,7 @@ class SimpleNode:
         return self.__key
 
     @key.setter
-    def key(self, other):
+    def key(self, other: Hashable):
         """setting the key outside the constructor is forbidden."""
         raise InvalidNodeOperation("setting the node key")
 
@@ -36,12 +38,12 @@ class SimpleNode:
         raise InvalidNodeOperation("deleting the node key")
 
     @property
-    def parent(self):
+    def parent(self) -> "SimpleNode | None":
         """return the parent node."""
         return self.__parent
 
     @parent.setter
-    def parent(self, other):
+    def parent(self, other: "SimpleNode | None"):
         """set the parent node.
         If not null, ensure that self is a child of the new parent"""
         if self.__parent == other:
@@ -128,11 +130,11 @@ class SimpleNode:
                 k_.parent = None
             return kids_
 
-    def child(self, key):
+    def child(self, key) -> "SimpleNode | None":
         return self.__children.get(key, None)
 
     @property
-    def children(self):
+    def children(self) -> "Generator[SimpleNode, None, None]":
         """iterate through the node's children, sorted by key"""
         yield from (v for _, v in sorted(self.__children.items()))
 
@@ -212,16 +214,16 @@ class FlexibleNode(SimpleNode):
         super().__init__(key, parent=parent, **kwargs)
 
     @property
-    def parent(self):
+    def parent(self) -> "FlexibleNode | None":
         """override the parent getter from the base class"""
-        return SimpleNode.parent.fget(self)
+        return SimpleNode.parent.fget(self)  # type: ignore
 
     @parent.setter
     def parent(self, other):
         """override the parent setter to allow for hooks
         before and after adding the parent"""
         self._pre_assign_parent_hook(other)
-        SimpleNode.parent.fset(self, other)
+        SimpleNode.parent.fset(self, other)  # type: ignore
         self._post_assign_parent_hook(other)
 
     @parent.deleter
@@ -229,7 +231,7 @@ class FlexibleNode(SimpleNode):
         """override the parent deleter from the base class
         to allow for hooks before and after deletion"""
         self._pre_delete_parent_hook()
-        SimpleNode.parent.fdel(self)
+        SimpleNode.parent.fdel(self)  # type: ignore
         self._post_delete_parent_hook()
 
     def _pre_assign_parent_hook(self, other):

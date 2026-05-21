@@ -1,6 +1,7 @@
 import unittest
 
 from simpletree3 import *
+from simpletree3.nodes import SimpleNode
 
 
 class TestTreeMisc(unittest.TestCase):
@@ -52,7 +53,7 @@ class TestTreeMisc(unittest.TestCase):
         root_ = SimpleNode(key=0)
         for i in range(5):
             root_.add_child(SimpleNode(key=i))
-        n1 = root_.child(1)
+        n1: SimpleNode = root_.child(1)  # type: ignore
         print(root_.children_count)
         for nn in root_.children:
             print(nn, nn.key, nn.parent)
@@ -65,7 +66,7 @@ class TestTreeMisc(unittest.TestCase):
         root_ = FlexibleNode(key=0)
         for i in range(5):
             root_.add_child(FlexibleNode(key=i))
-        n1 = root_.child(1)
+        n1: SimpleNode = root_.child(1)  # type: ignore
         self.assertEqual(root_.siblings_count, 0, "sibling count did not match for root (flex)")
         self.assertEqual(n1.siblings_count, 4, "sibling count did not match (flex)")
         self.assertListEqual(list(n.key for n in root_.siblings), [], "root siblings did not match (flex)")
@@ -120,7 +121,7 @@ class TestTreeMisc(unittest.TestCase):
         node_ = next(root_.children)
         self.assertEqual(node_.height, 3)
         self.assertEqual(node_.depth, 1)
-        n_ = root_.remove_child(node_.key)
+        n_: SimpleNode = root_.remove_child(node_.key)  # type: ignore
         self.assertEqual(root_.height, 0)
         self.assertEqual(root_.depth, 0)
         self.assertEqual(n_.height, 3)
@@ -154,7 +155,7 @@ class TestTreeMisc(unittest.TestCase):
         node_ = next(root_.children)
         self.assertEqual(node_.height, 3)
         self.assertEqual(node_.depth, 1)
-        n_ = root_.remove_child(node_.key)
+        n_: SimpleNode = root_.remove_child(node_.key)  # type: ignore
         self.assertEqual(root_.height, 0)
         self.assertEqual(root_.depth, 0)
         self.assertEqual(n_.height, 3)

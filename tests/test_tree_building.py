@@ -1,4 +1,4 @@
-import unittest
+import pytest
 
 from simpletree3 import *
 
@@ -11,130 +11,142 @@ def _parent_from_key(key: int):
     return None
 
 
-class TestTreeBuilding(unittest.TestCase):
+class TestTreeBuilding:
     def test_build_simple_tree_int(self):
-        nodes_ = dict()
+        nodes_: dict[int, SimpleNode] = dict()
         for key in KEYS:
             if key > 0:
-                parent_node_ = nodes_[_parent_from_key(key)]
+                p = _parent_from_key(key)
+                assert p is not None
+                parent_node_ = nodes_[p]
                 nodes_[key] = SimpleNode(key=key, parent=parent_node_)
             else:
                 nodes_[0] = SimpleNode(key=0)
 
-        self.assertEqual(len(KEYS), len(nodes_), "not all nodes were inserted")
+        assert len(KEYS) == len(nodes_), "not all nodes were inserted"
 
     def test_build_simple_tree_int_2(self):
-        nodes_ = dict()
+        nodes_: dict[int, SimpleNode] = dict()
         for key in KEYS:
             if key > 0:
-                parent_node_ = nodes_[_parent_from_key(key)]
+                p = _parent_from_key(key)
+                assert p is not None
+                parent_node_ = nodes_[p]
                 nodes_[key] = SimpleNode(key=key)
                 parent_node_.add_child(nodes_[key])
             else:
                 nodes_[0] = SimpleNode(key=0)
 
-        self.assertEqual(len(KEYS), len(nodes_), "not all nodes were inserted")
+        assert len(KEYS) == len(nodes_), "not all nodes were inserted"
 
     def test_build_flexible_tree_int(self):
-        nodes_ = dict()
+        nodes_: dict[int, FlexibleNode] = dict()
         for key in KEYS:
             if key > 0:
-                parent_node_ = nodes_[_parent_from_key(key)]
+                p = _parent_from_key(key)
+                assert p is not None
+                parent_node_ = nodes_[p]
                 nodes_[key] = FlexibleNode(key=key, parent=parent_node_)
             else:
                 nodes_[0] = FlexibleNode(key=0)
 
-        self.assertEqual(len(KEYS), len(nodes_), "not all nodes were inserted")
+        assert len(KEYS) == len(nodes_), "not all nodes were inserted"
 
     def test_build_flexible_tree_int_2(self):
-        nodes_ = dict()
+        nodes_: dict[int, FlexibleNode] = dict()
         for key in KEYS:
             if key > 0:
-                parent_node_ = nodes_[_parent_from_key(key)]
+                p = _parent_from_key(key)
+                assert p is not None
+                parent_node_ = nodes_[p]
                 nodes_[key] = FlexibleNode(key=key)
                 parent_node_.add_child(nodes_[key])
             else:
                 nodes_[0] = FlexibleNode(key=0)
 
-        self.assertEqual(len(KEYS), len(nodes_), "not all nodes were inserted")
+        assert len(KEYS) == len(nodes_), "not all nodes were inserted"
 
     def test_build_simple_tree_str(self):
-        nodes_ = dict()
+        nodes_: dict[str, SimpleNode] = dict()
         for key in KEYS:
             skey = str(key)
             if key > 0:
-                parent_node_ = nodes_[str(_parent_from_key(key))]
+                p = _parent_from_key(key)
+                assert p is not None
+                parent_node_ = nodes_[str(p)]
                 nodes_[skey] = SimpleNode(key=skey, parent=parent_node_)
             else:
                 nodes_[skey] = SimpleNode(key=skey)
 
-        self.assertEqual(len(KEYS), len(nodes_), "not all nodes were inserted")
+        assert len(KEYS) == len(nodes_), "not all nodes were inserted"
 
     def test_build_flexible_tree_str(self):
-        nodes_ = dict()
+        nodes_: dict[str, FlexibleNode] = dict()
         for key in KEYS:
             skey = str(key)
             if key > 0:
-                parent_node_ = nodes_[str(_parent_from_key(key))]
+                p = _parent_from_key(key)
+                assert p is not None
+                parent_node_ = nodes_[str(p)]
                 nodes_[skey] = FlexibleNode(key=skey, parent=parent_node_)
             else:
                 nodes_[skey] = FlexibleNode(key=skey)
 
-        self.assertEqual(len(KEYS), len(nodes_), "not all nodes were inserted")
+        assert len(KEYS) == len(nodes_), "not all nodes were inserted"
 
     def test_bad_build_simple_tree_1(self):
-        with self.assertRaises(DuplicateChildNode):
+        with pytest.raises(DuplicateChildNode):
             root_ = SimpleNode(key=0)
             nn = 5
             [SimpleNode(key=k, parent=root_) for k in range(1, nn + 1)]
-            self.assertEqual(nn, root_.children_count, "invalid number of children")
+            assert nn == root_.children_count, "invalid number of children"
             SimpleNode(key=2, parent=root_)
 
     def test_bad_build_simple_tree_2(self):
-        with self.assertRaises(InvalidNodeOperation):
+        with pytest.raises(InvalidNodeOperation):
             root_ = SimpleNode(key=0)
             nn = 5
             [SimpleNode(key=k, parent=root_) for k in range(1, nn + 1)]
             root_.parent = root_.child(1)
 
     def test_bad_build_simple_tree_3(self):
-        with self.assertRaises(InvalidNodeOperation):
+        with pytest.raises(InvalidNodeOperation):
             root_ = SimpleNode(key=0)
             nn = 5
             [SimpleNode(key=k, parent=root_) for k in range(1, nn + 1)]
             root_.parent = root_
 
     def test_bad_build_simple_tree_4(self):
-        with self.assertRaises(InvalidNodeOperation):
+        with pytest.raises(InvalidNodeOperation):
             root_ = SimpleNode(key=0)
             nn = 5
             [SimpleNode(key=k, parent=root_) for k in range(1, nn + 1)]
             root_.add_child(root_)
 
     def test_bad_build_flexible_tree_1(self):
-        with self.assertRaises(DuplicateChildNode):
+        with pytest.raises(DuplicateChildNode):
             root_ = FlexibleNode(key=0)
             nn = 5
             [FlexibleNode(key=k, parent=root_) for k in range(1, nn + 1)]
-            self.assertEqual(nn, root_.children_count, "invalid number of children")
+            assert nn == root_.children_count, "invalid number of children"
             SimpleNode(key=2, parent=root_)
 
     def test_bad_build_flexible_tree_2(self):
-        with self.assertRaises(InvalidNodeOperation):
+        with pytest.raises(InvalidNodeOperation):
             root_ = FlexibleNode(key=0)
             nn = 5
             [FlexibleNode(key=k, parent=root_) for k in range(1, nn + 1)]
             root_.parent = root_.child(1)
 
     def test_bad_build_flexible_tree_3(self):
-        with self.assertRaises(InvalidNodeOperation):
+        with pytest.raises(InvalidNodeOperation):
             root_ = FlexibleNode(key=0)
             nn = 5
             [FlexibleNode(key=k, parent=root_) for k in range(1, nn+1)]
             root_.parent = root_
 
     def test_bad_build_flexible_tree_4(self):
-        with self.assertRaises(InvalidNodeOperation):
+        with pytest.raises(InvalidNodeOperation):
             root_ = FlexibleNode(key=0)
             nn = 5
             [FlexibleNode(key=k, parent=root_) for k in range(1, nn+1)]
@@ -165,17 +177,17 @@ class TestTreeBuilding(unittest.TestCase):
         n7_ = SimpleNode(key=7, parent=n2_)
         n8_ = SimpleNode(key=8, parent=n2_)
 
-        self.assertEqual(n2_.children_count, 3)
+        assert n2_.children_count == 3
         n2_.remove_child(key=None)
         n2_.remove_child(key=99)
-        self.assertEqual(n2_.children_count, 3)
+        assert n2_.children_count == 3
         n2_.remove_child(key=6)
-        self.assertEqual(n2_.children_count, 2)
+        assert n2_.children_count == 2
         n2_.remove_children()
-        self.assertEqual(n2_.children_count, 0)
+        assert n2_.children_count == 0
         n1_.remove_child(key=3, recursive=True)
-        self.assertEqual(n5_.parent, None)
-        self.assertEqual(n1_.children_count, 1)
+        assert n5_.parent is None
+        assert n1_.children_count == 1
 
     def test_flexible_delete_child(self):
         root_ = FlexibleNode(key=0)
@@ -188,14 +200,14 @@ class TestTreeBuilding(unittest.TestCase):
         n7_ = FlexibleNode(key=7, parent=n2_)
         n8_ = FlexibleNode(key=8, parent=n2_)
 
-        self.assertEqual(n2_.children_count, 3)
+        assert n2_.children_count == 3
         n2_.remove_child(key=None)
         n2_.remove_child(key=99)
-        self.assertEqual(n2_.children_count, 3)
+        assert n2_.children_count == 3
         n2_.remove_child(key=6)
-        self.assertEqual(n2_.children_count, 2)
+        assert n2_.children_count == 2
         n2_.remove_children()
-        self.assertEqual(n2_.children_count, 0)
+        assert n2_.children_count == 0
         n1_.remove_child(key=3, recursive=True)
-        self.assertEqual(n5_.parent, None)
-        self.assertEqual(n1_.children_count, 1)
+        assert n5_.parent is None
+        assert n1_.children_count == 1

@@ -1,4 +1,6 @@
-import unittest
+from typing import cast
+
+import pytest
 
 from simpletree3 import *
 
@@ -22,7 +24,7 @@ class MyNode(FlexibleNode):
         self.info_post = (self.key, None)
 
 
-class TestInheritance(unittest.TestCase):
+class TestInheritance:
     def test_inheritance(self):
         root_ = MyNode(0)
         node_ = root_
@@ -30,13 +32,15 @@ class TestInheritance(unittest.TestCase):
             node_ = MyNode(key=i, parent=find_first_node_from_here(node_, i // 3))
 
         for n_ in preorder_iterator(root_):
+            n_ = cast(MyNode, n_)
             if n_.is_root:
                 continue
+            assert n_.parent is not None
             t_ = (n_.key, n_.parent.key)
-            self.assertEqual(n_.info_pre, t_, "pre assign parent hook was not called")
-            self.assertEqual(n_.info_post, t_, "post assign parent hook was not called")
+            assert n_.info_pre == t_, "pre assign parent hook was not called"
+            assert n_.info_post == t_, "post assign parent hook was not called"
 
         del node_.parent
         t_ = (node_.key, None)
-        self.assertEqual(node_.info_pre, t_, "pre delete parent hook was not called")
-        self.assertEqual(node_.info_post, t_, "post delete parent hook was not called")
+        assert node_.info_pre == t_, "pre delete parent hook was not called"
+        assert node_.info_post == t_, "post delete parent hook was not called"

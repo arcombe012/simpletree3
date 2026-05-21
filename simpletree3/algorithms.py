@@ -1,16 +1,20 @@
 # cython: language_level=3
+from typing import Any, Generator, Callable, Hashable
 from functools import lru_cache         # pragma: no cover
 from itertools import chain             # pragma: no cover
 
+from .abstract_node import AbstractNode
 
-def reverse_path_iterator(node):
+
+def reverse_path_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """iterate through the parents of node until reaching root."""
-    while node:
-        yield node
-        node = node.parent
+    n_: AbstractNode | None = node
+    while n_:
+        yield n_
+        n_ = n_.parent
 
 
-def preorder_iterator(node):
+def preorder_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """preorder iteration of the tree nodes
     (first the node, then preorder through the children)"""
     yield node
@@ -18,7 +22,7 @@ def preorder_iterator(node):
         yield from preorder_iterator(child)
 
 
-def postorder_iterator(node):
+def postorder_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """postorder iteration of the tree nodes
     (first postorder through the children, then the node)"""
     for child in node.children:
@@ -26,7 +30,7 @@ def postorder_iterator(node):
     yield node
 
 
-def level_order_iterator(node):
+def level_order_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """level order iteration through the children"""
     nodes_ = [node]
     while len(nodes_):
@@ -35,7 +39,7 @@ def level_order_iterator(node):
         nodes_ = list(chain.from_iterable((node_.children for node_ in nodes_)))
 
 
-def leaves_iterator(node):
+def leaves_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """iterate through the leaves (using preorder ordering)"""
     if 0 == node.children_count:
         yield node
@@ -44,20 +48,26 @@ def leaves_iterator(node):
             yield from leaves_iterator(child)
 
 
-def filtered_preorder_iterator(node, select=None, ignore=None):
+def filtered_preorder_iterator(node: AbstractNode,
+        select: Callable[[AbstractNode], bool] | None = None,
+        ignore: Callable[[AbstractNode], bool] | None = None) \
+        -> Generator[AbstractNode, None, None]:
     """selective preorder iteration
         - walk is preorder;
         - if select is specified, return the node if select(node) is True
         - if ignore is specified, skip completely the subtree rooted in node"""
-    if ignore and ignore(node):
+    if (ignore is not None) and ignore(node):
         return
-    if select is None or select(node):
+    if (select is None) or select(node):
         yield node
     for child in node.children:
         yield from filtered_preorder_iterator(child, select, ignore)
 
 
-def filtered_postorder_iterator(node, select=None, ignore=None):
+def filtered_postorder_iterator(node: AbstractNode,
+        select: Callable[[AbstractNode], bool] | None = None,
+        ignore: Callable[[AbstractNode], bool] | None = None)\
+        -> Generator[AbstractNode, None, None]:
     """selective postorder iteration
         - walk is postorder;
         - if select is specified, return the node if select(node) is True
@@ -70,7 +80,10 @@ def filtered_postorder_iterator(node, select=None, ignore=None):
         yield node
 
 
-def filtered_level_order_iterator(node, select=None, ignore=None):
+def filtered_level_order_iterator(node: AbstractNode,
+        select: Callable[[AbstractNode], bool] | None = None,
+        ignore: Callable[[AbstractNode], bool] | None = None)\
+        -> Generator[AbstractNode, None, None]:
     """selective level order iteration
         - walk is level order;
         - if select is specified, return the node if select(node) is True
@@ -91,7 +104,10 @@ def filtered_level_order_iterator(node, select=None, ignore=None):
         nodes_ = tmp_
 
 
-def filtered_leaves_iterator(node, select=None, ignore=None):
+def filtered_leaves_iterator(node: AbstractNode,
+        select: Callable[[AbstractNode], bool] | None = None,
+        ignore: Callable[[AbstractNode], bool] | None = None)\
+        -> Generator[AbstractNode, None, None]:
     """iterate through the leaves (using preorder ordering)"""
     if ignore and ignore(node):     # pragma: no branch
         return
@@ -103,7 +119,7 @@ def filtered_leaves_iterator(node, select=None, ignore=None):
             yield from filtered_leaves_iterator(child, select, ignore)
 
 
-def find_nodes(root_node, key):
+def find_nodes(root_node: AbstractNode, key: Hashable) -> Generator[AbstractNode, None, None]:
     """preorder iterate through all the nodes in the tree with the given key,
     starting at the root"""
     if root_node.key == key:        # pragma: no branch
@@ -113,7 +129,7 @@ def find_nodes(root_node, key):
 
 
 @lru_cache()
-def find_first_node(root_node, key):
+def find_first_node(root_node: AbstractNode, key: Hashable) -> AbstractNode | None:
     """find the first node in the tree (using preorder iteration) with the given key,
     starting at the root"""
     try:
@@ -122,7 +138,7 @@ def find_first_node(root_node, key):
         return None
 
 
-def find_nodes_from_here(start_node, key):
+def find_nodes_from_here(start_node: AbstractNode, key: Hashable) -> Generator[AbstractNode, None, None]:
     """preorder iterate through all the nodes in the tree with the given key,
     starting with the subtree rooted at the start node,
     then continuing with the parent's subtree, and so on until the total tree.
@@ -144,7 +160,7 @@ def find_nodes_from_here(start_node, key):
 
 
 @lru_cache()
-def find_first_node_from_here(start_node, key):
+def find_first_node_from_here(start_node: AbstractNode, key) -> AbstractNode | None:
     """find the first node matching the tree,
     using the progressive subtree walking from the find_nodes_from_here iterator.
 
@@ -155,7 +171,7 @@ def find_first_node_from_here(start_node, key):
         return None
 
 
-def find_nodes_by_rule(root_node, select):
+def find_nodes_by_rule(root_node: AbstractNode, select):
     """iterate through the nodes that match the select rule
     (a.k.a. select(node) == True"""
     if select(root_node):        # pragma: no branch
@@ -165,7 +181,7 @@ def find_nodes_by_rule(root_node, select):
 
 
 @lru_cache()
-def find_first_node_by_rule(root_node, select):
+def find_first_node_by_rule(root_node: AbstractNode, select) -> AbstractNode | None:
     """find the first (in preorder) node that matches the select rule
     (a.k.a. select(node) == True"""
     try:
@@ -174,7 +190,7 @@ def find_first_node_by_rule(root_node, select):
         return None
 
 
-def find_nodes_from_here_by_rule(start_node, select):
+def find_nodes_from_here_by_rule(start_node: AbstractNode, select)-> Generator[AbstractNode, None, None]:
     """iterate through the nodes matching the select rule,
     using the progressive subtree walking"""
     node_ = start_node
@@ -191,7 +207,7 @@ def find_nodes_from_here_by_rule(start_node, select):
 
 
 @lru_cache()
-def find_first_node_from_here_by_rule(start_node, select):
+def find_first_node_from_here_by_rule(start_node: AbstractNode, select) -> AbstractNode | None:
     """find the first (in preorder) node that matches the select rule
     (a.k.a. select(node) == True
     using the progressive subtree walking"""

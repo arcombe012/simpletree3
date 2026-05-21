@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "simpletree3"
 authors = [{"name" = "arcombe012"}]
 description = "A simple tree structure and associated search/iteration tools for python 3.4+. If found, uses cython for compilation."
-requires-python = ">=3.4"
+requires-python = ">=3.10"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 keywords = [
     "tree",
@@ -28,6 +28,11 @@ dynamic = ["version"]
 
 [project.urls]
 source = "https://github.com/arcombe012/simpletree3.git"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0",
+]
 
 [tool.setuptools]
 packages = ["simpletree3"]
