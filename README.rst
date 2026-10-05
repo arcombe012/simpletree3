@@ -3,8 +3,7 @@ Simpletree3 module
 
 Offers classes implementing basic tree-like
 functionality, as well as iterators for walking
-the trees and node search functionality. Requires Python3.4 or later.
-Cython compilation is performed if cython is installed.
+the trees and node search functionality. Requires Python 3.10 or later.
 
 The design goal is to provide a basic class implementing the
 essential tree structure and functionality. Practical applications will
@@ -37,22 +36,33 @@ dictionary keys (hence the hashable requirement).
 Connections with nodes up and down the tree are
 accessed through the parent and children properties
 (children offers an iterator for the child nodes,
-sorted by node key).
+sorted by node key; set the class attribute
+``sort_children = False`` in a subclass to iterate
+in insertion order instead, which is faster and
+allows keys of mixed, non-comparable types).
 The root node of a tree is the node with parent
 equal to None. Setting the parent of a node
-checks that no loops are inserted and adds
+checks that no loops or duplicate keys are inserted and adds
 the current node to the parent's children (if needed).
+All checks run before anything is changed, so a failed
+assignment leaves the tree untouched.
 Deleting a parent sets it to None and removes
 the node from the parent's children.
 
 Some additional convenience properties are defined -
-siblings, ancestors, depth, height - as well as
-methods for adding and removing child nodes.
+siblings, ancestors, path, key_path, root, depth, height, size -
+as well as methods for adding and removing child nodes
+(add_child, remove_child, remove_children, detach),
+walking down by keys (``get_descendant(*keys)``) and
+checking relationships (is_ancestor_of, is_descendant_of).
 
 FlexibleNode
 ^^^^^^^^^^^^
-This is a convenience class that add hooks to
-setting and deleting a parent. The motivation for
+This is a convenience class that adds hooks to
+setting and deleting a parent. The delete hooks fire
+whenever a node is detached from its parent
+(``del node.parent``, ``detach()``, ``remove_child()``,
+``remove_children()``). The motivation for
 providing it is that currently Python does not
 offer a simple syntax for calling a base class
 property from a derived class when that property is
@@ -76,6 +86,11 @@ and leaf iterators. Each comes in two flavors - a simple
 one, iterating through all nodes, and a filtered
 one, where specific nodes can be selected
 and/or specific subtrees can be ignored.
+All walks are iterative, so arbitrarily deep trees
+do not hit Python's recursion limit.
+
+Utility functions ``count_nodes(node)`` and
+``lowest_common_ancestor(a, b)`` are also provided.
 
 Search functionality
 --------------------
@@ -83,7 +98,8 @@ Search functionality
 The simplest search is done using a preorder iteration
 procedure that yields nodes with the specified key.
 A separate find function returns the first node matching
-that key.
+that key. Search results are never cached, so they always
+reflect the current state of the tree.
 
 A common use case when building trees is that
 subsequent nodes are added in a subtree containing the last

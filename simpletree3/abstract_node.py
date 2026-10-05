@@ -1,5 +1,5 @@
-from typing import Hashable, Generator
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
+from collections.abc import Hashable, Iterator
 
 
 class AbstractNode(metaclass=ABCMeta):
@@ -12,10 +12,10 @@ class AbstractNode(metaclass=ABCMeta):
     @abstractmethod
     def parent(self) -> "AbstractNode | None":
         pass
-    
+
     @property
     @abstractmethod
-    def children(self) -> "Generator[AbstractNode, None, None]":
+    def children(self) -> "Iterator[AbstractNode]":
         pass
 
     @property

@@ -1,15 +1,17 @@
-# cython: language_level=3
-from typing import Any, Generator, Callable, Hashable
-from functools import lru_cache         # pragma: no cover
-from itertools import chain             # pragma: no cover
+from collections import deque
+from collections.abc import Callable, Generator, Hashable
 
 from .abstract_node import AbstractNode
 
+# All the walks below are iterative (explicit stack/queue), so that
+# deep trees do not hit the recursion limit and each yielded node
+# costs O(1) instead of O(depth) nested generator frames.
 
-def reverse_path_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
+
+def reverse_path_iterator(node: AbstractNode | None) -> Generator[AbstractNode, None, None]:
     """iterate through the parents of node until reaching root."""
-    n_: AbstractNode | None = node
-    while n_:
+    n_ = node
+    while n_ is not None:
         yield n_
         n_ = n_.parent
 
@@ -17,35 +19,40 @@ def reverse_path_iterator(node: AbstractNode) -> Generator[AbstractNode, None, N
 def preorder_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """preorder iteration of the tree nodes
     (first the node, then preorder through the children)"""
-    yield node
-    for child in node.children:
-        yield from preorder_iterator(child)
+    stack_ = [node]
+    while stack_:
+        n_ = stack_.pop()
+        yield n_
+        stack_.extend(reversed(list(n_.children)))
 
 
 def postorder_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """postorder iteration of the tree nodes
     (first postorder through the children, then the node)"""
-    for child in node.children:
-        yield from postorder_iterator(child)
-    yield node
+    stack_: list[tuple[AbstractNode, bool]] = [(node, False)]
+    while stack_:
+        n_, expanded_ = stack_.pop()
+        if expanded_:
+            yield n_
+        else:
+            stack_.append((n_, True))
+            stack_.extend((c_, False) for c_ in reversed(list(n_.children)))
 
 
 def level_order_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """level order iteration through the children"""
-    nodes_ = [node]
-    while len(nodes_):
-        for node_ in nodes_:
-            yield node_
-        nodes_ = list(chain.from_iterable((node_.children for node_ in nodes_)))
+    queue_ = deque([node])
+    while queue_:
+        n_ = queue_.popleft()
+        yield n_
+        queue_.extend(n_.children)
 
 
 def leaves_iterator(node: AbstractNode) -> Generator[AbstractNode, None, None]:
     """iterate through the leaves (using preorder ordering)"""
-    if 0 == node.children_count:
-        yield node
-    else:
-        for child in node.children:
-            yield from leaves_iterator(child)
+    for n_ in preorder_iterator(node):
+        if n_.children_count == 0:
+            yield n_
 
 
 def filtered_preorder_iterator(node: AbstractNode,
@@ -56,12 +63,14 @@ def filtered_preorder_iterator(node: AbstractNode,
         - walk is preorder;
         - if select is specified, return the node if select(node) is True
         - if ignore is specified, skip completely the subtree rooted in node"""
-    if (ignore is not None) and ignore(node):
-        return
-    if (select is None) or select(node):
-        yield node
-    for child in node.children:
-        yield from filtered_preorder_iterator(child, select, ignore)
+    stack_ = [node]
+    while stack_:
+        n_ = stack_.pop()
+        if ignore is not None and ignore(n_):
+            continue
+        if select is None or select(n_):
+            yield n_
+        stack_.extend(reversed(list(n_.children)))
 
 
 def filtered_postorder_iterator(node: AbstractNode,
@@ -72,12 +81,15 @@ def filtered_postorder_iterator(node: AbstractNode,
         - walk is postorder;
         - if select is specified, return the node if select(node) is True
         - if ignore is specified, skip completely the subtree rooted in node"""
-    if ignore and ignore(node):
-        return
-    for child in node.children:
-        yield from filtered_postorder_iterator(child, select, ignore)
-    if select is None or select(node):
-        yield node
+    stack_: list[tuple[AbstractNode, bool]] = [(node, False)]
+    while stack_:
+        n_, expanded_ = stack_.pop()
+        if expanded_:
+            if select is None or select(n_):
+                yield n_
+        elif ignore is None or not ignore(n_):
+            stack_.append((n_, True))
+            stack_.extend((c_, False) for c_ in reversed(list(n_.children)))
 
 
 def filtered_level_order_iterator(node: AbstractNode,
@@ -88,54 +100,53 @@ def filtered_level_order_iterator(node: AbstractNode,
         - walk is level order;
         - if select is specified, return the node if select(node) is True
         - if ignore is specified, skip completely the subtree rooted in node"""
-    def _skip_node(n, skip=None):
-        if skip and skip(n):
-            return True
-        return False
-    if _skip_node(node, skip=ignore):       # pragma: no branch
-        return
-    nodes_ = [node]
-    while len(nodes_):
-        tmp_ = []
-        for node_ in nodes_:
-            if select is None or select(node_):       # pragma: no branch
-                yield node_
-            tmp_.extend(c for c in node_.children if not _skip_node(c, skip=ignore))
-        nodes_ = tmp_
+    queue_ = deque([node])
+    while queue_:
+        n_ = queue_.popleft()
+        if ignore is not None and ignore(n_):
+            continue
+        if select is None or select(n_):
+            yield n_
+        queue_.extend(n_.children)
 
 
 def filtered_leaves_iterator(node: AbstractNode,
         select: Callable[[AbstractNode], bool] | None = None,
         ignore: Callable[[AbstractNode], bool] | None = None)\
         -> Generator[AbstractNode, None, None]:
-    """iterate through the leaves (using preorder ordering)"""
-    if ignore and ignore(node):     # pragma: no branch
-        return
-    if 0 == node.children_count:
-        if select is None or select(node):      # pragma: no branch
-            yield node
-    else:
-        for child in node.children:
-            yield from filtered_leaves_iterator(child, select, ignore)
+    """iterate through the leaves (using preorder ordering)
+        - if select is specified, return the leaf if select(leaf) is True
+        - if ignore is specified, skip completely the subtree rooted in node"""
+    for n_ in filtered_preorder_iterator(node, ignore=ignore):
+        if n_.children_count == 0 and (select is None or select(n_)):
+            yield n_
+
+
+def count_nodes(node: AbstractNode) -> int:
+    """return the number of nodes in the subtree rooted in node (including node)"""
+    return sum(1 for _ in preorder_iterator(node))
+
+
+def lowest_common_ancestor(node_a: AbstractNode, node_b: AbstractNode) -> AbstractNode | None:
+    """return the deepest node that is an ancestor of (or equal to) both nodes,
+    or None if they belong to different trees"""
+    ancestors_a_ = {id(n_) for n_ in reverse_path_iterator(node_a)}
+    for n_ in reverse_path_iterator(node_b):
+        if id(n_) in ancestors_a_:
+            return n_
+    return None
 
 
 def find_nodes(root_node: AbstractNode, key: Hashable) -> Generator[AbstractNode, None, None]:
     """preorder iterate through all the nodes in the tree with the given key,
     starting at the root"""
-    if root_node.key == key:        # pragma: no branch
-        yield root_node
-    for child in root_node.children:
-        yield from find_nodes(child, key)
+    return find_nodes_by_rule(root_node, lambda n_: n_.key == key)
 
 
-@lru_cache()
 def find_first_node(root_node: AbstractNode, key: Hashable) -> AbstractNode | None:
     """find the first node in the tree (using preorder iteration) with the given key,
     starting at the root"""
-    try:
-        return next(find_nodes(root_node, key))
-    except StopIteration:
-        return None
+    return next(find_nodes(root_node, key), None)
 
 
 def find_nodes_from_here(start_node: AbstractNode, key: Hashable) -> Generator[AbstractNode, None, None]:
@@ -146,72 +157,51 @@ def find_nodes_from_here(start_node: AbstractNode, key: Hashable) -> Generator[A
 
     This is useful if there's reason to believe that
     often enough the nodes that are searched for are close to the start node"""
-    node_ = start_node
-    yield from find_nodes(node_, key)
-    while node_.parent:
-        this_key_ = node_.key
-        node_ = node_.parent
-        if node_.key == key:        # pragma: no branch
-            yield node_
-        for child_ in node_.children:
-            if child_.key == this_key_:     # pragma: no branch
-                continue
-            yield from find_nodes(child_, key)
+    return find_nodes_from_here_by_rule(start_node, lambda n_: n_.key == key)
 
 
-@lru_cache()
-def find_first_node_from_here(start_node: AbstractNode, key) -> AbstractNode | None:
+def find_first_node_from_here(start_node: AbstractNode, key: Hashable) -> AbstractNode | None:
     """find the first node matching the tree,
     using the progressive subtree walking from the find_nodes_from_here iterator.
 
     Use it if the target node should probably be close to the starting one."""
-    try:
-        return next(find_nodes_from_here(start_node, key))
-    except StopIteration:
-        return None
+    return next(find_nodes_from_here(start_node, key), None)
 
 
-def find_nodes_by_rule(root_node: AbstractNode, select):
+def find_nodes_by_rule(root_node: AbstractNode, select: Callable[[AbstractNode], bool]) \
+        -> Generator[AbstractNode, None, None]:
     """iterate through the nodes that match the select rule
     (a.k.a. select(node) == True"""
-    if select(root_node):        # pragma: no branch
-        yield root_node
-    for child in root_node.children:
-        yield from find_nodes_by_rule(child, select)
+    return filtered_preorder_iterator(root_node, select=select)
 
 
-@lru_cache()
-def find_first_node_by_rule(root_node: AbstractNode, select) -> AbstractNode | None:
+def find_first_node_by_rule(root_node: AbstractNode, select: Callable[[AbstractNode], bool]) \
+        -> AbstractNode | None:
     """find the first (in preorder) node that matches the select rule
     (a.k.a. select(node) == True"""
-    try:
-        return next(find_nodes_by_rule(root_node, select))
-    except StopIteration:
-        return None
+    return next(find_nodes_by_rule(root_node, select), None)
 
 
-def find_nodes_from_here_by_rule(start_node: AbstractNode, select)-> Generator[AbstractNode, None, None]:
+def find_nodes_from_here_by_rule(start_node: AbstractNode, select: Callable[[AbstractNode], bool]) \
+        -> Generator[AbstractNode, None, None]:
     """iterate through the nodes matching the select rule,
     using the progressive subtree walking"""
-    node_ = start_node
-    yield from find_nodes_by_rule(node_, select)
-    while node_.parent:
-        this_key_ = node_.key
-        node_ = node_.parent
-        if select(node_):        # pragma: no branch
+    yield from find_nodes_by_rule(start_node, select)
+    prev_ = start_node
+    node_ = start_node.parent
+    while node_ is not None:
+        if select(node_):
             yield node_
         for child_ in node_.children:
-            if child_.key == this_key_:     # pragma: no branch
-                continue
-            yield from find_nodes_by_rule(child_, select)
+            if child_ is not prev_:
+                yield from find_nodes_by_rule(child_, select)
+        prev_ = node_
+        node_ = node_.parent
 
 
-@lru_cache()
-def find_first_node_from_here_by_rule(start_node: AbstractNode, select) -> AbstractNode | None:
+def find_first_node_from_here_by_rule(start_node: AbstractNode,
+        select: Callable[[AbstractNode], bool]) -> AbstractNode | None:
     """find the first (in preorder) node that matches the select rule
     (a.k.a. select(node) == True
     using the progressive subtree walking"""
-    try:
-        return next(find_nodes_from_here_by_rule(start_node, select))
-    except StopIteration:
-        return None
+    return next(find_nodes_from_here_by_rule(start_node, select), None)
