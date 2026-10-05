@@ -61,7 +61,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["simpletree3"]
+source_pkgs = ["simpletree3"]
 
 [tool.coverage.report]
 exclude_also = ["@abstractmethod"]
